@@ -55,12 +55,20 @@
     </developer>
   </developers>
 
+  <repositories>
+    <repository>
+      <id>pentaho-nexus</id>
+      <name>PentahoNexus</name>
+      <url>http://nexus.pentaho.org/content/groups/omni</url>
+    </repository>
+  </repositories>
+
   <properties>
     <dependency.pentaho-kettle.kettle-core.version>6.0-SNAPSHOT</dependency.pentaho-kettle.kettle-core.version>
     <!-- Plugin dependencies -->
     <target.jdk.version>1.7</target.jdk.version>
-    <plugin.org.apache.felix.maven-bundle-plugin.version>2.3.7</plugin.org.apache.felix.maven-bundle-plugin.version>
-    <plugin.org.apache.maven.plugins.maven-compiler-plugin.version>3.1</plugin.org.apache.maven.plugins.maven-compiler-plugin.version>
+    <plugin.maven-bundle-plugin.version>2.3.7</plugin.maven-bundle-plugin.version>
+    <plugin.maven-compiler-plugin.version>3.1</plugin.maven-compiler-plugin.version>
   </properties>
 
   <dependencies>
@@ -116,7 +124,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>${plugin.org.apache.maven.plugins.maven-compiler-plugin.version}</version>
+        <version>${plugin.maven-compiler-plugin.version}</version>
         <configuration>
           <source>${target.jdk.version}</source>
           <target>${target.jdk.version}</target>
