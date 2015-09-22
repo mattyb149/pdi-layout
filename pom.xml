@@ -90,6 +90,11 @@
       <version>4.2.0</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>pentaho-kettle</groupId>
+      <artifactId>kettle-ui-swt</artifactId>
+      <version>${dependency.pentaho-kettle.kettle-core.version}</version>
+    </dependency>
   </dependencies>
 
   <scm>
