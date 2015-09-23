@@ -12,8 +12,10 @@ import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.dom.Document;
 import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
 
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Set;
 
@@ -22,7 +24,7 @@ import java.util.Set;
 public class PdiLayoutManager extends AbstractXulEventHandler
   implements SpoonPluginInterface, ISpoonMenuController, SpoonLifecycleListener {
 
-  Set<LayoutProvider> providers = new HashSet<>();
+  List<LayoutProvider> providers = new ArrayList<>();
 
   ResourceBundle bundle = new ResourceBundle() {
     @Override
@@ -35,6 +37,10 @@ public class PdiLayoutManager extends AbstractXulEventHandler
       return PdiLayoutManager.class.getName();
     }
   };
+
+  public PdiLayoutManager(List<LayoutProvider> providers) {
+    this.providers = providers;
+  }
 
   @Override
   public void applyToContainer( String category, XulDomContainer container ) throws XulException {
@@ -75,7 +81,7 @@ public class PdiLayoutManager extends AbstractXulEventHandler
 
   }
 
-  public Set<LayoutProvider> getLayoutProviders() {
+  public List<LayoutProvider> getLayoutProviders() {
     return providers;
   }
 }
