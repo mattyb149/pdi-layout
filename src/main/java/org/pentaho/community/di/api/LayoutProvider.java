@@ -25,5 +25,9 @@ import org.pentaho.di.core.EngineMetaInterface;
  */
 public interface LayoutProvider {
 
+  String getId();
+
+  String getName();
+
   void applyLayout( EngineMetaInterface engineMeta );
 }

@@ -1,7 +1,7 @@
 package org.pentaho.community.di;
 
 import org.pentaho.community.di.api.LayoutProvider;
-import org.pentaho.di.ui.spoon.ISpoonMenuController;
+import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.ui.spoon.SpoonLifecycleListener;
 import org.pentaho.di.ui.spoon.SpoonPerspective;
 import org.pentaho.di.ui.spoon.SpoonPlugin;
@@ -9,60 +9,37 @@ import org.pentaho.di.ui.spoon.SpoonPluginCategories;
 import org.pentaho.di.ui.spoon.SpoonPluginInterface;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.XulException;
-import org.pentaho.ui.xul.dom.Document;
+import org.pentaho.ui.xul.components.XulMenuitem;
+import org.pentaho.ui.xul.containers.XulMenupopup;
 import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.concurrent.atomic.AtomicReference;
 
 @SpoonPlugin( id = "PdiLayoutManager", image = "" )
 @SpoonPluginCategories( { "trans-graph" } )
-public class PdiLayoutManager extends AbstractXulEventHandler
-  implements SpoonPluginInterface, ISpoonMenuController, SpoonLifecycleListener {
+public class PdiLayoutManager extends AbstractXulEventHandler implements SpoonPluginInterface {
 
-  List<LayoutProvider> providers = new ArrayList<>();
-
-  ResourceBundle bundle = new ResourceBundle() {
+  private static final ResourceBundle bundle = new ResourceBundle() {
     @Override
     public Enumeration<String> getKeys() {
-      return null;
+      return Collections.emptyEnumeration();
     }
 
     @Override
     protected Object handleGetObject( String key ) {
-      return PdiLayoutManager.class.getName();
+      return BaseMessages.getString( PdiLayoutManager.class, key );
     }
   };
 
-  public PdiLayoutManager(List<LayoutProvider> providers) {
+  private final List<LayoutProvider> providers;
+  private final AtomicReference<XulMenupopup> menuPopup = new AtomicReference<>();
+
+  public PdiLayoutManager( List<LayoutProvider> providers ) {
     this.providers = providers;
-  }
-
-  @Override
-  public void applyToContainer( String category, XulDomContainer container ) throws XulException {
-    ClassLoader cl = getClass().getClassLoader();
-    container.registerClassLoader( cl );
-    if ( category.equals( "spoon" ) || category.equals( "trans-graph" ) ) {
-      container.loadOverlay( "spoon_overlays.xul", bundle );
-      container.addEventHandler( this );
-    }
-  }
-
-  @Override
-  public SpoonLifecycleListener getLifecycleListener() {
-    return this;
-  }
-
-  @Override
-  public SpoonPerspective getPerspective() {
-    return null;
-  }
-
-  @Override
-  public void updateMenu( Document doc ) {
-    // Empty method
   }
 
   @Override
@@ -71,15 +48,43 @@ public class PdiLayoutManager extends AbstractXulEventHandler
   }
 
   @Override
-  public void onEvent( SpoonLifeCycleEvent spoonLifeCycleEvent ) {
-
+  public void applyToContainer( String category, XulDomContainer container ) throws XulException {
+    ClassLoader cl = getClass().getClassLoader();
+    container.registerClassLoader( cl );
+    if ( category.equals( "trans-graph" ) ) {
+      container.loadOverlay( "org/pentaho/community/di/trans_layout_menu_overlay.xul", bundle );
+      container.addEventHandler( this );
+      menuPopup.set( (XulMenupopup) document.getElementById( "trans-graph-background-layout-popup" ) );
+      for ( LayoutProvider provider : providers ) {
+        addProvider( provider );
+      }
+    }
   }
 
-  public void init() {
-
+  public void addProvider( LayoutProvider provider ) {
+    XulMenupopup xulMenupopup = menuPopup.get();
+    if ( xulMenupopup == null ) {
+      return;
+    }
+    try {
+      XulMenuitem menuItem;
+      menuItem = (XulMenuitem) document.createElement( "menuitem" );
+      menuItem.setId( provider.getId() );
+      menuItem.setLabel( provider.getName() );
+      menuItem.setCommand( String.format( "%s.runLayout(\"%s\")", getName(), provider.getId() ) );
+      xulMenupopup.addChild( menuItem );
+    } catch ( XulException e ) {
+      e.printStackTrace();
+    }
   }
 
-  public List<LayoutProvider> getLayoutProviders() {
-    return providers;
+  @Override
+  public SpoonLifecycleListener getLifecycleListener() {
+    return null;
+  }
+
+  @Override
+  public SpoonPerspective getPerspective() {
+    return null;
   }
 }
