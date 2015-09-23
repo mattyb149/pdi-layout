@@ -28,6 +28,14 @@ import org.pentaho.di.core.EngineMetaInterface;
  */
 public class HorizontalLayout implements LayoutProvider {
 
+  @Override public String getId() {
+    return "horizontal";
+  }
+
+  @Override public String getName() {
+    return "Horizontal Tree";
+  }
+
   @Override
   public void applyLayout( EngineMetaInterface engineMeta ) {
 

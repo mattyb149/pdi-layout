@@ -126,11 +126,11 @@
           <instructions>
             <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
             <Bundle-Version>${project.version}</Bundle-Version>
-            <Bundle-Activator>org.pentaho.community.di.Activator</Bundle-Activator>
             <Export-Package>
-              org.pentaho.community.di*;version=${project.version}
+              org.pentaho.community.di.*;version=${project.version}
             </Export-Package>
             <Import-Package>
+              org.pentaho.di.osgi,
               *
             </Import-Package>
           </instructions>
