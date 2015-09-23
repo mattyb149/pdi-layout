@@ -1,7 +1,11 @@
 package org.pentaho.community.di;
 
+import org.eclipse.jface.action.IMenuListener;
+import org.eclipse.jface.action.IMenuManager;
+import org.eclipse.jface.action.MenuManager;
 import org.pentaho.community.di.api.LayoutProvider;
 import org.pentaho.di.i18n.BaseMessages;
+import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.SpoonLifecycleListener;
 import org.pentaho.di.ui.spoon.SpoonPerspective;
 import org.pentaho.di.ui.spoon.SpoonPlugin;
@@ -12,6 +16,7 @@ import org.pentaho.ui.xul.XulException;
 import org.pentaho.ui.xul.components.XulMenuitem;
 import org.pentaho.ui.xul.containers.XulMenupopup;
 import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
+import org.pentaho.ui.xul.jface.tags.JfaceMenupopup;
 
 import java.util.Collections;
 import java.util.Enumeration;
@@ -34,6 +39,7 @@ public class PdiLayoutManager extends AbstractXulEventHandler implements SpoonPl
       return BaseMessages.getString( PdiLayoutManager.class, key );
     }
   };
+  private static final String PDI_LAYOUT_MANAGER = "pdiLayoutManager";
 
   private final List<LayoutProvider> providers;
   private final AtomicReference<XulMenupopup> menuPopup = new AtomicReference<>();
@@ -44,7 +50,7 @@ public class PdiLayoutManager extends AbstractXulEventHandler implements SpoonPl
 
   @Override
   public String getName() {
-    return "pdiLayoutManager";
+    return PDI_LAYOUT_MANAGER;
   }
 
   @Override
@@ -54,27 +60,31 @@ public class PdiLayoutManager extends AbstractXulEventHandler implements SpoonPl
     if ( category.equals( "trans-graph" ) ) {
       container.loadOverlay( "org/pentaho/community/di/trans_layout_menu_overlay.xul", bundle );
       container.addEventHandler( this );
-      menuPopup.set( (XulMenupopup) document.getElementById( "trans-graph-background-layout-popup" ) );
-      for ( LayoutProvider provider : providers ) {
-        addProvider( provider );
-      }
+
+      refreshProviders( (JfaceMenupopup) document.getElementById( "trans-graph-background-layout-popup" ) );
     }
   }
 
-  public void addProvider( LayoutProvider provider ) {
-    XulMenupopup xulMenupopup = menuPopup.get();
-    if ( xulMenupopup == null ) {
-      return;
-    }
-    try {
-      XulMenuitem menuItem;
-      menuItem = (XulMenuitem) document.createElement( "menuitem" );
-      menuItem.setId( provider.getId() );
-      menuItem.setLabel( provider.getName() );
-      menuItem.setCommand( String.format( "%s.runLayout(\"%s\")", getName(), provider.getId() ) );
-      xulMenupopup.addChild( menuItem );
-    } catch ( XulException e ) {
-      e.printStackTrace();
+  private void refreshProviders( final JfaceMenupopup popupMenu ) {
+    ( (MenuManager) popupMenu.getManagedObject() ).addMenuListener( new IMenuListener() {
+      @Override public void menuAboutToShow( IMenuManager iMenuManager ) {
+        popupMenu.removeChildren();
+        for ( LayoutProvider provider : providers ) {
+          XulMenuitem menuItem = popupMenu.createNewMenuitem();
+          menuItem.setId( provider.getId() );
+          menuItem.setLabel( provider.getName() );
+          menuItem.setCommand( String.format( "%s.runLayout(\"%s\")", PDI_LAYOUT_MANAGER, provider.getId() ) );
+        }
+      }
+    } );
+  }
+
+  public void runLayout( String id ) {
+    for ( LayoutProvider provider : providers ) {
+      if ( id.equals( provider.getId() ) ) {
+        provider.applyLayout( Spoon.getInstance().getActiveMeta() );
+        return;
+      }
     }
   }
 
