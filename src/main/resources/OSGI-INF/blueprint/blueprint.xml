@@ -22,7 +22,6 @@
 
   <reference-list id="layoutServiceRefList"
                   interface="org.pentaho.community.di.api.LayoutProvider"
-                  member-type="service-object"
                   availability="optional">
   </reference-list>
 

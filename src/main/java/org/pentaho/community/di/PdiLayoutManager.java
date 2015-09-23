@@ -14,10 +14,8 @@ import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.List;
 import java.util.ResourceBundle;
-import java.util.Set;
 
 @SpoonPlugin( id = "PdiLayoutManager", image = "" )
 @SpoonPluginCategories( { "trans-graph" } )
