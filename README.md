@@ -2,6 +2,12 @@
 
 A service (and some examples) to provide layout options for PDI 6.0+ Transformations and Jobs
 
+## Prerequisites
+To properly load bundle, the following packages must be added to /system/karaf/etc/custom.properties
+```
+org.eclipse.jface.action
+org.pentaho.ui.xul.jface.tags
+```
 
 Doc TBD
 
