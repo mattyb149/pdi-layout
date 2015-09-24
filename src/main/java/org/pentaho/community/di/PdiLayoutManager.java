@@ -1,8 +1,6 @@
 package org.pentaho.community.di;
 
-import org.eclipse.jface.action.IMenuListener;
-import org.eclipse.jface.action.IMenuManager;
-import org.eclipse.jface.action.MenuManager;
+import com.google.common.collect.ImmutableMap;
 import org.pentaho.community.di.api.LayoutProvider;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.ui.spoon.Spoon;
@@ -11,16 +9,16 @@ import org.pentaho.di.ui.spoon.SpoonPerspective;
 import org.pentaho.di.ui.spoon.SpoonPlugin;
 import org.pentaho.di.ui.spoon.SpoonPluginCategories;
 import org.pentaho.di.ui.spoon.SpoonPluginInterface;
+import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.XulException;
-import org.pentaho.ui.xul.components.XulMenuitem;
 import org.pentaho.ui.xul.containers.XulMenupopup;
 import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
-import org.pentaho.ui.xul.jface.tags.JfaceMenupopup;
 
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -61,22 +59,39 @@ public class PdiLayoutManager extends AbstractXulEventHandler implements SpoonPl
       container.loadOverlay( "org/pentaho/community/di/trans_layout_menu_overlay.xul", bundle );
       container.addEventHandler( this );
 
-      refreshProviders( (JfaceMenupopup) document.getElementById( "trans-graph-background-layout-popup" ) );
+      for ( LayoutProvider provider : providers ) {
+        addProvider( provider );
+      }
     }
   }
 
-  private void refreshProviders( final JfaceMenupopup popupMenu ) {
-    ( (MenuManager) popupMenu.getManagedObject() ).addMenuListener( new IMenuListener() {
-      @Override public void menuAboutToShow( IMenuManager iMenuManager ) {
-        popupMenu.removeChildren();
-        for ( LayoutProvider provider : providers ) {
-          XulMenuitem menuItem = popupMenu.createNewMenuitem();
-          menuItem.setId( provider.getId() );
-          menuItem.setLabel( provider.getName() );
-          menuItem.setCommand( String.format( "%s.runLayout(\"%s\")", PDI_LAYOUT_MANAGER, provider.getId() ) );
+  public void addProvider( final LayoutProvider provider ) throws XulException {
+    // Ensure spoon has loaded the menu overlay
+    if ( document == null || xulDomContainer == null ) {
+      return;
+    }
+
+    // Check if this provider is already added
+    XulComponent element = document.getElementById( provider.getId() );
+    if ( element != null ) {
+      element.setVisible( true );
+    } else {
+      xulDomContainer.loadOverlay( "org/pentaho/community/di/trans_layout_provider_template.xul", new ResourceBundle() {
+
+        Map<String, String> propertyMap = ImmutableMap.of( "id", provider.getId(), "name", provider.getName() );
+
+        @Override public Enumeration<String> getKeys() {
+          return Collections.enumeration( propertyMap.keySet() );
         }
-      }
-    } );
+
+        @Override protected Object handleGetObject( String key ) {
+          return propertyMap.get( key );
+        }
+      } );
+    }
+
+    // Hide the placeholder
+    document.getElementById( "layout-placeholder" ).setVisible( false );
   }
 
   public void runLayout( String id ) {
