@@ -2,7 +2,7 @@
 
   <feature name="spoon-gremlin" version="1.0">
     <feature>pentaho-metaverse</feature>
-    <bundle>mvn:org.pentaho.community/pdi-layout/1.0-SNAPSHOT</bundle>
+    <bundle>mvn:org.pentaho.community/pdi-layout-plugin/1.0-SNAPSHOT</bundle>
   </feature>
 
 </features>
