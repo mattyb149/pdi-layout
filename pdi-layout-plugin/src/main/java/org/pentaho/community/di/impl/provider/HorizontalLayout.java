@@ -20,24 +20,36 @@
 package org.pentaho.community.di.impl.provider;
 
 
+import com.tinkerpop.blueprints.Graph;
 import org.pentaho.community.di.api.LayoutProvider;
+import org.pentaho.community.di.util.GraphUtils;
 import org.pentaho.di.core.EngineMetaInterface;
+import org.pentaho.di.trans.step.StepMeta;
+
+import java.util.List;
 
 /**
  * Created by mburgess on 9/16/15.
  */
 public class HorizontalLayout implements LayoutProvider {
 
-  @Override public String getId() {
+  @Override
+  public String getId() {
     return "horizontal";
   }
 
-  @Override public String getName() {
+  @Override
+  public String getName() {
     return "Horizontal Tree";
   }
 
   @Override
   public void applyLayout( EngineMetaInterface engineMeta ) {
+    Graph g = GraphUtils.createGraph( engineMeta );
+
+    List<StepMeta> longestPath = GraphUtils.getLongestPath( g );
+
+    // TBD traverse/query the graph and update the X/Y positions of the steps as needed
 
   }
 }
