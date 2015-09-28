@@ -15,6 +15,9 @@
   <bean id="HorizontalLP" class="org.pentaho.community.di.impl.provider.HorizontalLayout" scope="singleton"/>
   <service id="horizontalLayoutProvider" interface="org.pentaho.community.di.api.LayoutProvider" ref="HorizontalLP"/>
 
+  <bean id="RandomLP" class="org.pentaho.community.di.impl.provider.RandomLayout" scope="singleton"/>
+  <service id="randomLayoutProvider" interface="org.pentaho.community.di.api.LayoutProvider" ref="RandomLP"/>
+
   <reference-list id="layoutServiceRefList"
                   interface="org.pentaho.community.di.api.LayoutProvider"
                   availability="optional">

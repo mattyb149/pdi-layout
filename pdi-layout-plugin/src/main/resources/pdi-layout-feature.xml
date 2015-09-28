@@ -1,6 +1,6 @@
 <features xmlns="http://karaf.apache.org/xmlns/features/v1.0.0">
 
-  <feature name="spoon-gremlin" version="1.0">
+  <feature name="pdi-layout" version="1.0">
     <feature>pentaho-metaverse</feature>
     <bundle>mvn:org.pentaho.community/pdi-layout-plugin/1.0-SNAPSHOT</bundle>
   </feature>

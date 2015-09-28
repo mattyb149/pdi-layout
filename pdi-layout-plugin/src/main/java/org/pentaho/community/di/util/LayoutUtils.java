@@ -18,10 +18,47 @@
  */
 package org.pentaho.community.di.util;
 
+import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.Vertex;
+import org.pentaho.di.core.gui.GUIPositionInterface;
+import org.pentaho.di.ui.spoon.AbstractGraphWithArea;
+import org.pentaho.di.core.EngineMetaInterface;
+import org.pentaho.di.core.gui.Point;
+import org.pentaho.di.ui.spoon.AbstractGraph;
+import org.pentaho.di.ui.spoon.job.JobGraph;
+import org.pentaho.di.ui.spoon.trans.TransGraph;
+
 /**
  * Created by mburgess on 9/16/15.
  */
 public class LayoutUtils {
 
-  // TBD things like "findLongestPath", etc.
+  public static void applyGraphToMeta( Graph g ) {
+
+    if ( g != null ) {
+
+      for ( Vertex v : g.getVertices() ) {
+        GUIPositionInterface meta = v.getProperty( GraphUtils.PROPERTY_REF );
+        meta.setLocation(
+          (int) v.getProperty( GraphUtils.PROPERTY_X ),
+          (int) v.getProperty( GraphUtils.PROPERTY_Y )
+        );
+      }
+    }
+  }
+
+
+  public static EngineMetaInterface getMetaFromGraph( AbstractGraph jobOrTransGraph ) {
+    EngineMetaInterface engineMeta = null;
+    if ( jobOrTransGraph instanceof TransGraph ) {
+      engineMeta = ( (TransGraph) jobOrTransGraph ).getMeta();
+    } else if ( jobOrTransGraph instanceof JobGraph ) {
+      engineMeta = ( (JobGraph) jobOrTransGraph ).getMeta();
+    }
+    return engineMeta;
+  }
+
+  public static Point getGraphDimensions( AbstractGraph jobOrTransGraph ) {
+    return new AbstractGraphWithArea( jobOrTransGraph ).getCanvasArea();
+  }
 }

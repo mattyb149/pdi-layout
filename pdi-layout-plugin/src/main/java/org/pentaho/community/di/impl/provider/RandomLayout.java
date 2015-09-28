@@ -18,34 +18,36 @@
  */
 package org.pentaho.community.di.impl.provider;
 
-
 import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.Vertex;
 import org.pentaho.community.di.api.LayoutProvider;
 import org.pentaho.community.di.util.GraphUtils;
-import org.pentaho.di.trans.step.StepMeta;
 
-import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
-public class HorizontalLayout implements LayoutProvider {
-
+public class RandomLayout implements LayoutProvider {
   @Override
   public String getId() {
-    return "horizontal";
+    return "random";
   }
 
   @Override
   public String getName() {
-    return "Horizontal Tree";
+    return "Random";
   }
 
   @Override
   public void applyLayout( Graph graph, int canvasWidth, int canvasHeight ) {
 
     if ( graph != null ) {
+      final int MARGIN = 5;
 
-      List<StepMeta> longestPath = GraphUtils.getLongestPath( graph );
-
-      // TBD traverse/query the graph and update the X/Y positions of the steps as needed
+      // Pick (X,Y) at random and set each step to those values
+      // TODO prevent overlap?
+      for ( Vertex v : graph.getVertices() ) {
+        v.setProperty( GraphUtils.PROPERTY_X, ThreadLocalRandom.current().nextInt( MARGIN, canvasWidth - MARGIN ) );
+        v.setProperty( GraphUtils.PROPERTY_Y, ThreadLocalRandom.current().nextInt( MARGIN, canvasHeight - MARGIN ) );
+      }
     }
   }
 }

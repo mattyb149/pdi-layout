@@ -18,7 +18,8 @@
  */
 package org.pentaho.community.di.api;
 
-import org.pentaho.di.core.EngineMetaInterface;
+import com.tinkerpop.blueprints.Graph;
+import org.pentaho.di.core.gui.Point;
 
 /**
  * Created by mburgess on 9/16/15.
@@ -29,5 +30,5 @@ public interface LayoutProvider {
 
   String getName();
 
-  void applyLayout( EngineMetaInterface engineMeta );
+  void applyLayout( Graph graph, int canvasWidth, int canvasHeight );
 }
