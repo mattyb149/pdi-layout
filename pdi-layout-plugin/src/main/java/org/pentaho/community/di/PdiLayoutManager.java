@@ -1,14 +1,21 @@
 package org.pentaho.community.di;
 
 import com.google.common.collect.ImmutableMap;
+import com.tinkerpop.blueprints.Graph;
 import org.pentaho.community.di.api.LayoutProvider;
+import org.pentaho.community.di.util.GraphUtils;
+import org.pentaho.community.di.util.LayoutUtils;
+import org.pentaho.di.core.EngineMetaInterface;
+import org.pentaho.di.core.gui.Point;
 import org.pentaho.di.i18n.BaseMessages;
+import org.pentaho.di.ui.spoon.AbstractGraph;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.SpoonLifecycleListener;
 import org.pentaho.di.ui.spoon.SpoonPerspective;
 import org.pentaho.di.ui.spoon.SpoonPlugin;
 import org.pentaho.di.ui.spoon.SpoonPluginCategories;
 import org.pentaho.di.ui.spoon.SpoonPluginInterface;
+import org.pentaho.di.ui.spoon.trans.TransGraph;
 import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.XulException;
@@ -80,11 +87,13 @@ public class PdiLayoutManager extends AbstractXulEventHandler implements SpoonPl
 
         Map<String, String> propertyMap = ImmutableMap.of( "id", provider.getId(), "name", provider.getName() );
 
-        @Override public Enumeration<String> getKeys() {
+        @Override
+        public Enumeration<String> getKeys() {
           return Collections.enumeration( propertyMap.keySet() );
         }
 
-        @Override protected Object handleGetObject( String key ) {
+        @Override
+        protected Object handleGetObject( String key ) {
           return propertyMap.get( key );
         }
       } );
@@ -95,9 +104,23 @@ public class PdiLayoutManager extends AbstractXulEventHandler implements SpoonPl
   }
 
   public void runLayout( String id ) {
+
+    Spoon spoon = Spoon.getInstance();
+    // Either a Job or Transformation is active, both are AbstractGraphs
+    AbstractGraph metaGraph = spoon.getActiveTransGraph();
+    if ( metaGraph == null ) {
+      metaGraph = spoon.getActiveJobGraph();
+    }
+
     for ( LayoutProvider provider : providers ) {
       if ( id.equals( provider.getId() ) ) {
-        provider.applyLayout( Spoon.getInstance().getActiveMeta() );
+        if ( metaGraph != null ) {
+          Point canvasDimensions = LayoutUtils.getGraphDimensions( metaGraph );
+          Graph g = GraphUtils.createGraph( LayoutUtils.getMetaFromGraph( metaGraph ) );
+          provider.applyLayout( g, canvasDimensions.x, canvasDimensions.y );
+          LayoutUtils.applyGraphToMeta( g );
+          metaGraph.redraw();
+        }
         return;
       }
     }
