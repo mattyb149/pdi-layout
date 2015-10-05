@@ -8,7 +8,7 @@
 
   <bean id="PdiLayoutManager" class="org.pentaho.community.di.PdiLayoutManager" scope="singleton">
     <pen:di-plugin type="org.pentaho.di.ui.spoon.SpoonPluginType"/>
-    <argument ref="layoutServiceRefList"/>
+    <property name="providers" ref="layoutServiceRefList"/>
   </bean>
 
 
@@ -21,6 +21,7 @@
   <reference-list id="layoutServiceRefList"
                   interface="org.pentaho.community.di.api.LayoutProvider"
                   availability="optional">
+      <reference-listener ref="PdiLayoutManager" bind-method="addProvider" unbind-method="removeProvider"/>
   </reference-list>
 
 </blueprint>

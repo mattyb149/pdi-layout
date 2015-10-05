@@ -18,6 +18,7 @@
  */
 package org.pentaho.community.di;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.tinkerpop.blueprints.Graph;
 import org.pentaho.community.di.api.LayoutProvider;
@@ -35,7 +36,6 @@ import org.pentaho.di.ui.spoon.SpoonPluginInterface;
 import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.XulException;
-import org.pentaho.ui.xul.containers.XulMenupopup;
 import org.pentaho.ui.xul.impl.AbstractXulEventHandler;
 
 import java.util.Collections;
@@ -43,7 +43,6 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
-import java.util.concurrent.atomic.AtomicReference;
 
 @SpoonPlugin( id = "PdiLayoutManager", image = "" )
 @SpoonPluginCategories( { "trans-graph" } )
@@ -62,11 +61,14 @@ public class PdiLayoutManager extends AbstractXulEventHandler implements SpoonPl
   };
   private static final String PDI_LAYOUT_MANAGER = "pdiLayoutManager";
 
-  private final List<LayoutProvider> providers;
-  private final AtomicReference<XulMenupopup> menuPopup = new AtomicReference<>();
+  private List<LayoutProvider> providers = ImmutableList.of();
 
-  public PdiLayoutManager( List<LayoutProvider> providers ) {
+  public void setProviders( List<LayoutProvider> providers ) {
     this.providers = providers;
+  }
+
+  public List<LayoutProvider> getProviders() {
+    return providers;
   }
 
   @Override
@@ -117,6 +119,18 @@ public class PdiLayoutManager extends AbstractXulEventHandler implements SpoonPl
 
     // Hide the placeholder
     document.getElementById( "layout-placeholder" ).setVisible( false );
+  }
+
+  public void removeProvider( final LayoutProvider provider ) {
+    // Ensure spoon has loaded the menu overlay
+    if ( document == null || xulDomContainer == null ) {
+      return;
+    }
+
+    XulComponent element = document.getElementById( provider.getId() );
+    if ( element != null ) {
+      element.setVisible( false );
+    }
   }
 
   public void runLayout( String id ) {
