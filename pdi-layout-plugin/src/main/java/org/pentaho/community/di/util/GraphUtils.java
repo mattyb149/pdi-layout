@@ -97,8 +97,26 @@ public class GraphUtils {
 
   public static List<Vertex> getLongestPath( Graph g ) {
     List<Vertex> longestPath = new LinkedList<>();
+    int maxLength = 0;
 
     // g.V().out.loop(1){it.loops<1000}{true}.path().last()
+    GremlinPipeline<Vertex, List<Vertex>> pipe =
+      new GremlinPipeline<>( g );
+
+    List<List> paths =
+      pipe.V().out().loop( 1, new NumLoops<Vertex>( 1000 ), new Emit<Vertex>( true ) ).path().toList();
+
+    if ( paths != null ) {
+      // Not sure why Gremlin-Groovy orders the paths such that the last one is necessarily the longest, but the
+      // Java version above does not. So we keep the longest ourselves
+      for ( List path : paths ) {
+        int pathLength = path.size();
+        if ( maxLength < pathLength ) {
+          longestPath = (List<Vertex>) path;
+          maxLength = pathLength;
+        }
+      }
+    }
 
     return longestPath;
   }
@@ -118,6 +136,22 @@ public class GraphUtils {
     @Override
     public Boolean compute( LoopPipe.LoopBundle argument ) {
       return argument.getLoops() < numLoops;
+    }
+  }
+
+  /**
+   * This is a loop closure that returns true if the current loop count is less than the given number, false otherwise
+   */
+  protected static class Emit<S> implements PipeFunction<LoopPipe.LoopBundle<S>, Boolean> {
+    private boolean emitValue;
+
+    public Emit( boolean emitValue ) {
+      this.emitValue = emitValue;
+    }
+
+    @Override
+    public Boolean compute( LoopPipe.LoopBundle argument ) {
+      return emitValue;
     }
   }
 }

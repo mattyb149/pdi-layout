@@ -51,6 +51,53 @@ public class LayoutUtils {
     getActiveGraph().redraw();
   }
 
+  /**
+   * This method iterates over the graph looking for x- and y-coordinates that are negative. Using the minimum values
+   * for x and y, the graph is shifted to the left and down in order to ensure that all steps/entries are visible on
+   * the canvas.
+   * <p/>
+   * This should be called after all layout applications are performed.
+   *
+   * @param g The graph to update
+   */
+  public static void fitToBounds( Graph g ) {
+    int minX = 0;
+    int minY = 0;
+
+    if ( g != null ) {
+
+      for ( Vertex v : g.getVertices() ) {
+        int x = v.getProperty( GraphUtils.PROPERTY_X );
+        int y = v.getProperty( GraphUtils.PROPERTY_Y );
+        if ( x < minX ) {
+          minX = x;
+        }
+        if ( y < minY ) {
+          minY = y;
+        }
+      }
+
+      // Take absolute value and apply margins to get offset(s) to add
+      minX = Math.abs( minX );
+      minY = Math.abs( minY );
+
+      // Update all vertices
+      for ( Vertex v : g.getVertices() ) {
+        GUIPositionInterface meta = v.getProperty( GraphUtils.PROPERTY_REF );
+        Point originaLocation = meta.getLocation();
+        int newX = (int) v.getProperty( GraphUtils.PROPERTY_X ) + minX;
+        int newY = (int) v.getProperty( GraphUtils.PROPERTY_Y ) + minY;
+
+        boolean changed = ( originaLocation.x != newX || originaLocation.y != newY );
+        if ( changed ) {
+          meta.setLocation( newX, newY );
+          ( (StepMeta) meta ).setChanged( true );
+        }
+      }
+    }
+    getActiveGraph().redraw();
+  }
+
   public static Point getGraphDimensions( EngineMetaInterface engineMeta ) {
     Rectangle r = Spoon.getInstance().getActiveTransGraph().getClientArea();
     return new Point( r.width, r.height );
