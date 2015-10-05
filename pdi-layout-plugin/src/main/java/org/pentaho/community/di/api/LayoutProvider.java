@@ -19,7 +19,6 @@
 package org.pentaho.community.di.api;
 
 import com.tinkerpop.blueprints.Graph;
-import org.pentaho.di.core.gui.Point;
 
 /**
  * Created by mburgess on 9/16/15.

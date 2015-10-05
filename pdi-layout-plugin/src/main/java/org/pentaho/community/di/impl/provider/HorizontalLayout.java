@@ -20,9 +20,9 @@ package org.pentaho.community.di.impl.provider;
 
 
 import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.Vertex;
 import org.pentaho.community.di.api.LayoutProvider;
 import org.pentaho.community.di.util.GraphUtils;
-import org.pentaho.di.trans.step.StepMeta;
 
 import java.util.List;
 
@@ -43,7 +43,7 @@ public class HorizontalLayout implements LayoutProvider {
 
     if ( graph != null ) {
 
-      List<StepMeta> longestPath = GraphUtils.getLongestPath( graph );
+      List<Vertex> longestPath = GraphUtils.getLongestPath( graph );
 
       // TBD traverse/query the graph and update the X/Y positions of the steps as needed
     }
