@@ -2,7 +2,7 @@
 <?xml-stylesheet href="file://E:/workspaces/sprint_workspace/pentaho-xul/test/resource/documents/xul.css" type="text/css"?>
 <overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
   <menupopup id="trans-graph-background">
-    <menu id="trans-graph-background-layout" label="Apply layout" insertbefore="trans-graph-background-settings">
+    <menu id="trans-graph-background-layout" label="Apply Layout" insertbefore="trans-graph-background-settings">
       <menupopup id="trans-graph-background-layout-popup">
         <!-- To be filled in at runtime -->
         <menuitem id="layout-placeholder" disabled="true" label="No layouts are available"/>
