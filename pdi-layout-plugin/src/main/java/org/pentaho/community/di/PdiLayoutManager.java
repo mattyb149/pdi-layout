@@ -15,7 +15,6 @@ import org.pentaho.di.ui.spoon.SpoonPerspective;
 import org.pentaho.di.ui.spoon.SpoonPlugin;
 import org.pentaho.di.ui.spoon.SpoonPluginCategories;
 import org.pentaho.di.ui.spoon.SpoonPluginInterface;
-import org.pentaho.di.ui.spoon.trans.TransGraph;
 import org.pentaho.ui.xul.XulComponent;
 import org.pentaho.ui.xul.XulDomContainer;
 import org.pentaho.ui.xul.XulException;
@@ -107,19 +106,15 @@ public class PdiLayoutManager extends AbstractXulEventHandler implements SpoonPl
 
     Spoon spoon = Spoon.getInstance();
     // Either a Job or Transformation is active, both are AbstractGraphs
-    AbstractGraph metaGraph = spoon.getActiveTransGraph();
-    if ( metaGraph == null ) {
-      metaGraph = spoon.getActiveJobGraph();
-    }
+    EngineMetaInterface meta = spoon.getActiveMeta();
 
     for ( LayoutProvider provider : providers ) {
       if ( id.equals( provider.getId() ) ) {
-        if ( metaGraph != null ) {
-          Point canvasDimensions = LayoutUtils.getGraphDimensions( metaGraph );
-          Graph g = GraphUtils.createGraph( LayoutUtils.getMetaFromGraph( metaGraph ) );
+        if ( meta != null ) {
+          Point canvasDimensions = LayoutUtils.getGraphDimensions( meta );
+          Graph g = GraphUtils.createGraph( meta );
           provider.applyLayout( g, canvasDimensions.x, canvasDimensions.y );
           LayoutUtils.applyGraphToMeta( g );
-          metaGraph.redraw();
         }
         return;
       }

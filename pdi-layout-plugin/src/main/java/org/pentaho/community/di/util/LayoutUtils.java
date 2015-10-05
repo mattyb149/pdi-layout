@@ -20,17 +20,15 @@ package org.pentaho.community.di.util;
 
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.Vertex;
+import org.eclipse.swt.graphics.Rectangle;
 import org.pentaho.di.core.gui.GUIPositionInterface;
-import org.pentaho.di.ui.spoon.AbstractGraphWithArea;
 import org.pentaho.di.core.EngineMetaInterface;
 import org.pentaho.di.core.gui.Point;
+import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.ui.spoon.AbstractGraph;
-import org.pentaho.di.ui.spoon.job.JobGraph;
-import org.pentaho.di.ui.spoon.trans.TransGraph;
+import org.pentaho.di.ui.spoon.Spoon;
 
-/**
- * Created by mburgess on 9/16/15.
- */
+
 public class LayoutUtils {
 
   public static void applyGraphToMeta( Graph g ) {
@@ -39,26 +37,26 @@ public class LayoutUtils {
 
       for ( Vertex v : g.getVertices() ) {
         GUIPositionInterface meta = v.getProperty( GraphUtils.PROPERTY_REF );
-        meta.setLocation(
-          (int) v.getProperty( GraphUtils.PROPERTY_X ),
-          (int) v.getProperty( GraphUtils.PROPERTY_Y )
-        );
+        Point originaLocation = meta.getLocation();
+        int newX = v.getProperty( GraphUtils.PROPERTY_X );
+        int newY = v.getProperty( GraphUtils.PROPERTY_Y );
+
+        boolean changed = ( originaLocation.x != newX || originaLocation.y != newY );
+        if ( changed ) {
+          meta.setLocation( newX, newY );
+          ( (StepMeta) meta ).setChanged( true );
+        }
       }
     }
+    getActiveGraph().redraw();
   }
 
-
-  public static EngineMetaInterface getMetaFromGraph( AbstractGraph jobOrTransGraph ) {
-    EngineMetaInterface engineMeta = null;
-    if ( jobOrTransGraph instanceof TransGraph ) {
-      engineMeta = ( (TransGraph) jobOrTransGraph ).getMeta();
-    } else if ( jobOrTransGraph instanceof JobGraph ) {
-      engineMeta = ( (JobGraph) jobOrTransGraph ).getMeta();
-    }
-    return engineMeta;
+  public static Point getGraphDimensions( EngineMetaInterface engineMeta ) {
+    Rectangle r = Spoon.getInstance().getActiveTransGraph().getClientArea();
+    return new Point( r.width, r.height );
   }
 
-  public static Point getGraphDimensions( AbstractGraph jobOrTransGraph ) {
-    return new AbstractGraphWithArea( jobOrTransGraph ).getCanvasArea();
+  public static AbstractGraph getActiveGraph() {
+    return Spoon.getInstance().getActiveTransGraph();
   }
 }

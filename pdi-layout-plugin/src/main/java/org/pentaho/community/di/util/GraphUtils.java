@@ -27,7 +27,6 @@ import com.tinkerpop.pipes.PipeFunction;
 import com.tinkerpop.pipes.branch.LoopPipe;
 import org.pentaho.di.core.EngineMetaInterface;
 import org.pentaho.di.core.gui.Point;
-import org.pentaho.di.job.JobMeta;
 import org.pentaho.di.trans.TransHopMeta;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepMeta;
@@ -76,8 +75,6 @@ public class GraphUtils {
         Vertex toV = g.getVertices( PROPERTY_NAME, toStep.getName() ).iterator().next();
         g.addEdge( null, fromV, toV, EDGE_HOPSTO );
       }
-    } else if ( meta instanceof JobMeta ) {
-      JobMeta jobMeta = (JobMeta) meta;
     }
     return g;
   }
@@ -98,8 +95,8 @@ public class GraphUtils {
     return inputSteps;
   }
 
-  public static List<StepMeta> getLongestPath( Graph g ) {
-    List<StepMeta> longestPath = new LinkedList<>();
+  public static List<Vertex> getLongestPath( Graph g ) {
+    List<Vertex> longestPath = new LinkedList<>();
 
     // g.V().out.loop(1){it.loops<1000}{true}.path().last()
 
