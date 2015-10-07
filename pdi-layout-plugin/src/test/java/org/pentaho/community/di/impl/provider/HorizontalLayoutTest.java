@@ -52,27 +52,31 @@ public class HorizontalLayoutTest {
   public void testApplyLayout() throws Exception {
     horizontalLayout.applyLayout( graph, 1000, 1000 );
 
-    assertThat( getColumn( 0 ), containsInAnyOrder( "S0", "S1" ) );
-    assertThat( getColumn( 1 ), contains( "A" ) );
-    assertThat( getColumn( 2 ), contains( "B" ) );
-    assertThat( getColumn( 3 ), containsInAnyOrder( "C", "D" ) );
+    assertThat( verticesByProperty( "degree", 0 ), containsInAnyOrder( "S0", "S1" ) );
+    assertThat( verticesByProperty( "degree", 1 ), contains( "A" ) );
+    assertThat( verticesByProperty( "degree", 2 ), contains( "B" ) );
+    assertThat( verticesByProperty( "degree", 3 ), containsInAnyOrder( "C", "D" ) );
 
     List<String> orderedX = new GremlinPipeline<>( graph ).V()
-      .order( new PipeFunction<Pair<Vertex, Vertex>, Integer>() {
-        @Override public Integer compute( Pair<Vertex, Vertex> argument ) {
-          return Integer.compare(
-            argument.getA().<Integer>getProperty( "x" ),
-            argument.getB().<Integer>getProperty( "x" )
-          );
-        }
-      } )
+      .order( compareProperty( "x" ) )
       .id().cast( String.class )
       .toList();
 
     assertThat( orderedX, containsInRelativeOrder( "S1", "A", "B", "D" ) );
   }
 
-  private List<String> getColumn( int value ) {
-    return new GremlinPipeline<Graph, Vertex>( graph ).V( "column", value ).id().cast( String.class ).toList();
+  private PipeFunction<Pair<Vertex, Vertex>, Integer> compareProperty( final String key ) {
+    return new PipeFunction<Pair<Vertex, Vertex>, Integer>() {
+      @Override public Integer compute( Pair<Vertex, Vertex> argument ) {
+        return Integer.compare(
+          argument.getA().<Integer>getProperty( key ),
+          argument.getB().<Integer>getProperty( key )
+        );
+      }
+    };
+  }
+
+  private List<String> verticesByProperty( String key, Object value ) {
+    return new GremlinPipeline<Graph, Vertex>( graph ).V( key, value ).id().cast( String.class ).toList();
   }
 }

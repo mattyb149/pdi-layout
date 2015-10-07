@@ -18,9 +18,13 @@
  */
 package org.pentaho.community.di.impl.provider;
 
+import com.google.common.base.Predicates;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Ordering;
+import com.google.common.collect.Sets;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.Vertex;
@@ -31,9 +35,11 @@ import org.pentaho.community.di.api.LayoutProvider;
 import org.pentaho.community.di.util.GraphUtils;
 
 import java.util.List;
+import java.util.Set;
 
 public class HorizontalLayout implements LayoutProvider {
 
+  public static final String PROPERTY_DEGREE = "degree";
   public static final String PROPERTY_COLUMN = "column";
   public static final String PROPERTY_ROW = "row";
   public static final int COLUMN_FACTOR = 5;
@@ -51,25 +57,32 @@ public class HorizontalLayout implements LayoutProvider {
 
   @Override
   public void applyLayout( Graph graph, int canvasWidth, int canvasHeight ) {
-    GremlinPipeline<Graph, Vertex> pipe = new GremlinPipeline<>( graph );
-    List<Vertex> vertices = pipe.V()
+    ListMultimap<Integer, Vertex> groups = groupByDegree( graph );
+    updateGrid( groups );
+    updateXY( canvasWidth, canvasHeight, groups.values() );
+  }
+
+  protected ListMultimap<Integer, Vertex> groupByDegree( Graph graph ) {
+    final ListMultimap<Integer, Vertex> groups = ArrayListMultimap.create();
+    new GremlinPipeline<Graph, Vertex>( graph ).V()
       .as( "loop" )
-        // Set degree for each vertex
+        // Set degree for each vertex (defined here as distance to the furthest input step)
       .transform( new PipeFunction<Vertex, Iterable<Vertex>>() {
         @Override public Iterable<Vertex> compute( Vertex vertex ) {
           FluentIterable<Integer> degrees = FluentIterable.from( vertex.getVertices( Direction.IN ) )
-            .transform( GraphUtils.<Integer>getProperty( PROPERTY_COLUMN ) );
+            .transform( GraphUtils.<Integer>getProperty( PROPERTY_DEGREE ) );
 
           ImmutableList.Builder<Vertex> output = ImmutableList.builder();
           // If no inputs, rank as 0
           if ( degrees.isEmpty() ) {
-            vertex.setProperty( PROPERTY_COLUMN, 0 );
+            vertex.setProperty( PROPERTY_DEGREE, 0 );
           } else {
             // Find max degree of all inputs
             Integer value = Ordering.natural().nullsLast().max( degrees );
             if ( value != null ) {
-              vertex.setProperty( PROPERTY_COLUMN, value + 1 );
+              vertex.setProperty( PROPERTY_DEGREE, value + 1 );
             } else {
+              // Degree of an input was missing, check inputs and try again
               output.addAll( vertex.getVertices( Direction.IN ) );
             }
           }
@@ -80,13 +93,14 @@ public class HorizontalLayout implements LayoutProvider {
       .scatter().cast( Vertex.class )
       .loop( "loop", new PipeFunction<LoopPipe.LoopBundle<Vertex>, Boolean>() {
         @Override public Boolean compute( LoopPipe.LoopBundle<Vertex> argument ) {
-          return !argument.getObject().getPropertyKeys().contains( PROPERTY_COLUMN );
+          // Only allow a vertex to exit the loop if it's degree is defined
+          return !argument.getObject().getPropertyKeys().contains( PROPERTY_DEGREE );
         }
       } )
       .dedup()
       .groupBy( new PipeFunction<Vertex, Integer>() {
         @Override public Integer compute( Vertex vertex ) {
-          return vertex.getProperty( PROPERTY_COLUMN );
+          return vertex.getProperty( PROPERTY_DEGREE );
         }
       }, new PipeFunction<Vertex, Vertex>() {
         @Override public Vertex compute( Vertex vertex ) {
@@ -94,19 +108,48 @@ public class HorizontalLayout implements LayoutProvider {
         }
       }, new PipeFunction<List<Vertex>, List<Vertex>>() {
         @Override public List<Vertex> compute( List<Vertex> group ) {
-          int row = 0;
-          for ( Vertex vertex : group ) {
-            vertex.setProperty( PROPERTY_ROW, row++ );
+          // Group vertices by degree
+          if ( !group.isEmpty() ) {
+            Integer degree = group.get( 0 ).getProperty( PROPERTY_DEGREE );
+            groups.putAll( degree, group );
           }
           return group;
         }
       } )
-      .toList();
-
-    updateXY( canvasWidth, canvasHeight, vertices );
+      .iterate();
+    return groups;
   }
 
-  protected void updateXY( int canvasWidth, int canvasHeight, List<Vertex> vertices ) {
+  protected void updateGrid( ListMultimap<Integer, Vertex> groups ) {
+    // Go through each group in order
+    for ( int degree = 0; degree < groups.size(); degree++ ) {
+      Set<Integer> rowSet = Sets.newHashSet();
+      for ( Vertex vertex : groups.get( degree ) ) {
+        // Attempt to place step in same row as input
+        List<Integer> inputRows = FluentIterable.from( vertex.getVertices( Direction.IN ) )
+          .transform( GraphUtils.<Integer>getProperty( PROPERTY_ROW ) )
+          .filter( Predicates.notNull() )
+          .toList();
+
+        int row = 0;
+        for ( Integer input : inputRows ) {
+          row += input;
+        }
+        if ( !inputRows.isEmpty() ) {
+          row = (int) Math.ceil( row * 1.0 / inputRows.size() );
+        }
+        while ( rowSet.contains( row ) ) {
+          row++;
+        }
+
+        vertex.setProperty( PROPERTY_COLUMN, degree );
+        vertex.setProperty( PROPERTY_ROW, row );
+        rowSet.add( row );
+      }
+    }
+  }
+
+  protected void updateXY( int canvasWidth, int canvasHeight, Iterable<Vertex> vertices ) {
     int columnWidth = canvasWidth / COLUMN_FACTOR;
     int rowWidth = canvasHeight / ROW_FACTOR;
     for ( Vertex vertex : vertices ) {
