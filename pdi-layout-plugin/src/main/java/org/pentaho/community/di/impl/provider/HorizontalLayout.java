@@ -36,6 +36,8 @@ public class HorizontalLayout implements LayoutProvider {
 
   public static final String PROPERTY_COLUMN = "column";
   public static final String PROPERTY_ROW = "row";
+  public static final int COLUMN_FACTOR = 5;
+  public static final int ROW_FACTOR = 8;
 
   @Override
   public String getId() {
@@ -101,16 +103,18 @@ public class HorizontalLayout implements LayoutProvider {
       } )
       .toList();
 
-    int columnWidth = canvasWidth / 5;
-    int rowWidth = canvasHeight / 8;
+    updateXY( canvasWidth, canvasHeight, vertices );
+  }
+
+  protected void updateXY( int canvasWidth, int canvasHeight, List<Vertex> vertices ) {
+    int columnWidth = canvasWidth / COLUMN_FACTOR;
+    int rowWidth = canvasHeight / ROW_FACTOR;
     for ( Vertex vertex : vertices ) {
       int column = vertex.getProperty( PROPERTY_COLUMN );
       int row = vertex.getProperty( PROPERTY_ROW );
       vertex.setProperty( GraphUtils.PROPERTY_X, columnWidth / 2 + column * columnWidth );
       vertex.setProperty( GraphUtils.PROPERTY_Y, rowWidth / 2 + row * rowWidth );
     }
-
-    System.out.println( vertices );
   }
 
 }
