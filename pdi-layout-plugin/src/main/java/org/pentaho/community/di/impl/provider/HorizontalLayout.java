@@ -18,9 +18,15 @@
  */
 package org.pentaho.community.di.impl.provider;
 
-
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Ordering;
+import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.gremlin.java.GremlinPipeline;
+import com.tinkerpop.pipes.PipeFunction;
+import com.tinkerpop.pipes.branch.LoopPipe;
 import org.pentaho.community.di.api.LayoutProvider;
 import org.pentaho.community.di.util.GraphUtils;
 
@@ -28,24 +34,83 @@ import java.util.List;
 
 public class HorizontalLayout implements LayoutProvider {
 
+  public static final String PROPERTY_COLUMN = "column";
+  public static final String PROPERTY_ROW = "row";
+
   @Override
   public String getId() {
-    return "horizontal";
+    return "horizontalGridLayout";
   }
 
   @Override
   public String getName() {
-    return "Horizontal Tree";
+    return "Horizontal Grid";
   }
 
   @Override
   public void applyLayout( Graph graph, int canvasWidth, int canvasHeight ) {
+    GremlinPipeline<Graph, Vertex> pipe = new GremlinPipeline<>( graph );
+    List<Vertex> vertices = pipe.V()
+      .as( "loop" )
+        // Set degree for each vertex
+      .transform( new PipeFunction<Vertex, Iterable<Vertex>>() {
+        @Override public Iterable<Vertex> compute( Vertex vertex ) {
+          FluentIterable<Integer> degrees = FluentIterable.from( vertex.getVertices( Direction.IN ) )
+            .transform( GraphUtils.<Integer>getProperty( PROPERTY_COLUMN ) );
 
-    if ( graph != null ) {
+          ImmutableList.Builder<Vertex> output = ImmutableList.builder();
+          // If no inputs, rank as 0
+          if ( degrees.isEmpty() ) {
+            vertex.setProperty( PROPERTY_COLUMN, 0 );
+          } else {
+            // Find max degree of all inputs
+            Integer value = Ordering.natural().nullsLast().max( degrees );
+            if ( value != null ) {
+              vertex.setProperty( PROPERTY_COLUMN, value + 1 );
+            } else {
+              output.addAll( vertex.getVertices( Direction.IN ) );
+            }
+          }
+          output.add( vertex );
+          return output.build();
+        }
+      } )
+      .scatter().cast( Vertex.class )
+      .loop( "loop", new PipeFunction<LoopPipe.LoopBundle<Vertex>, Boolean>() {
+        @Override public Boolean compute( LoopPipe.LoopBundle<Vertex> argument ) {
+          return !argument.getObject().getPropertyKeys().contains( PROPERTY_COLUMN );
+        }
+      } )
+      .dedup()
+      .groupBy( new PipeFunction<Vertex, Integer>() {
+        @Override public Integer compute( Vertex vertex ) {
+          return vertex.getProperty( PROPERTY_COLUMN );
+        }
+      }, new PipeFunction<Vertex, Vertex>() {
+        @Override public Vertex compute( Vertex vertex ) {
+          return vertex;
+        }
+      }, new PipeFunction<List<Vertex>, List<Vertex>>() {
+        @Override public List<Vertex> compute( List<Vertex> group ) {
+          int row = 0;
+          for ( Vertex vertex : group ) {
+            vertex.setProperty( PROPERTY_ROW, row++ );
+          }
+          return group;
+        }
+      } )
+      .toList();
 
-      List<Vertex> longestPath = GraphUtils.getLongestPath( graph );
-
-      // TBD traverse/query the graph and update the X/Y positions of the steps as needed
+    int columnWidth = canvasWidth / 5;
+    int rowWidth = canvasHeight / 8;
+    for ( Vertex vertex : vertices ) {
+      int column = vertex.getProperty( PROPERTY_COLUMN );
+      int row = vertex.getProperty( PROPERTY_ROW );
+      vertex.setProperty( GraphUtils.PROPERTY_X, columnWidth / 2 + column * columnWidth );
+      vertex.setProperty( GraphUtils.PROPERTY_Y, rowWidth / 2 + row * rowWidth );
     }
+
+    System.out.println( vertices );
   }
+
 }

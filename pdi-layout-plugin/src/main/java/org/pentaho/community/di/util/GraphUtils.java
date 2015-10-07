@@ -18,7 +18,10 @@
  */
 package org.pentaho.community.di.util;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Iterables;
 import com.tinkerpop.blueprints.Direction;
+import com.tinkerpop.blueprints.Element;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
@@ -31,7 +34,6 @@ import org.pentaho.di.trans.TransHopMeta;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepMeta;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -57,7 +59,7 @@ public class GraphUtils {
       List<StepMeta> steps = transMeta.getSteps();
       if ( steps != null ) {
         for ( StepMeta step : steps ) {
-          Vertex v = g.addVertex( null );
+          Vertex v = g.addVertex( step.getName() );
           v.setProperty( PROPERTY_NAME, step.getName() );
           v.setProperty( PROPERTY_PLUGINID, step.getStepID() );
           Point location = step.getLocation();
@@ -71,28 +73,22 @@ public class GraphUtils {
         TransHopMeta hop = transMeta.getTransHop( i );
         StepMeta fromStep = hop.getFromStep();
         StepMeta toStep = hop.getToStep();
-        Vertex fromV = g.getVertices( PROPERTY_NAME, fromStep.getName() ).iterator().next();
-        Vertex toV = g.getVertices( PROPERTY_NAME, toStep.getName() ).iterator().next();
+        Vertex fromV = g.getVertex( fromStep.getName() );
+        Vertex toV = g.getVertex( toStep.getName() );
         g.addEdge( null, fromV, toV, EDGE_HOPSTO );
       }
     }
     return g;
   }
 
-  public static List<StepMeta> getInputSteps( Graph g ) {
-    List<StepMeta> inputSteps = new ArrayList<>();
+  public static List<Vertex> getInputSteps( Graph g ) {
     GremlinPipeline<Vertex, Vertex> pipe = new GremlinPipeline<>( g );
-    List<Vertex> vertices = pipe.V().filter( new PipeFunction<Vertex, Boolean>() {
-
+    return pipe.V().filter( new PipeFunction<Vertex, Boolean>() {
       @Override
       public Boolean compute( Vertex vertex ) {
-        return vertex != null && !vertex.getEdges( Direction.IN ).iterator().hasNext();
+        return Iterables.isEmpty( vertex.getEdges( Direction.IN ) );
       }
     } ).toList();
-    for ( Vertex v : vertices ) {
-      inputSteps.add( (StepMeta) v.getProperty( PROPERTY_REF ) );
-    }
-    return inputSteps;
   }
 
   public static List<Vertex> getLongestPath( Graph g ) {
@@ -121,12 +117,20 @@ public class GraphUtils {
     return longestPath;
   }
 
+  public static <O> Function<Element, O> getProperty( final String key ) {
+    return new Function<Element, O>() {
+      @Override public O apply( Element input ) {
+        return input.getProperty( key );
+      }
+    };
+  }
+
   /**
    * This is a loop closure that returns true if the current loop count is less than the given number, false otherwise
    *
    * @param <S> the type of object passed into the loop closure
    */
-  protected static class NumLoops<S> implements PipeFunction<LoopPipe.LoopBundle<S>, Boolean> {
+  public static class NumLoops<S> implements PipeFunction<LoopPipe.LoopBundle<S>, Boolean> {
     private int numLoops = 1;
 
     public NumLoops( int numLoops ) {
@@ -142,7 +146,7 @@ public class GraphUtils {
   /**
    * This is a loop closure that returns true if the current loop count is less than the given number, false otherwise
    */
-  protected static class Emit<S> implements PipeFunction<LoopPipe.LoopBundle<S>, Boolean> {
+  public static class Emit<S> implements PipeFunction<LoopPipe.LoopBundle<S>, Boolean> {
     private boolean emitValue;
 
     public Emit( boolean emitValue ) {
