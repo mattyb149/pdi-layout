@@ -1,13 +1,13 @@
 package org.pentaho.community.di.layout.snake;
 
-import com.google.common.collect.Lists;
+import com.google.common.base.Predicates;
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Ordering;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.Vertex;
 import org.pentaho.community.di.impl.provider.HorizontalLayout;
 import org.pentaho.community.di.util.GraphUtils;
-
-import java.util.List;
 
 /**
  * @author nhudak
@@ -29,10 +29,15 @@ public class SnakeLayout extends HorizontalLayout {
     super.applyLayout( graph, canvasWidth, canvasHeight );
   }
 
-  @Override protected void updateXY( int canvasWidth, int canvasHeight, List<Vertex> vertices ) {
+  @Override protected void updateGrid( ListMultimap<Integer, Vertex> groups ) {
+    super.updateGrid( groups );
+    FluentIterable<Vertex> vertices = FluentIterable.from( groups.values() );
+
     // Get maximum number of rows to compute "page height"
-    List<Integer> rows = Lists.transform( vertices, GraphUtils.<Integer>getProperty( PROPERTY_ROW ) );
-    final int pageHeight = rows.isEmpty() ? 0 : 1 + Ordering.natural().nullsFirst().max( rows );
+    FluentIterable<Integer> rows = vertices
+      .transform( GraphUtils.<Integer>getProperty( PROPERTY_ROW ) )
+      .filter( Predicates.notNull() );
+    final int pageHeight = rows.isEmpty() ? 0 : 1 + Ordering.natural().max( rows );
 
     // Wrap columns extending beyond the canvas
     for ( Vertex vertex : vertices ) {
@@ -43,6 +48,5 @@ public class SnakeLayout extends HorizontalLayout {
       vertex.setProperty( PROPERTY_COLUMN, column - pageNumber * COLUMN_FACTOR );
       vertex.setProperty( PROPERTY_ROW, row + pageNumber * pageHeight );
     }
-    super.updateXY( canvasWidth, canvasHeight, vertices );
   }
 }
